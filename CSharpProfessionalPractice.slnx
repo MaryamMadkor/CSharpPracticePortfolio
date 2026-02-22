@@ -1,0 +1,27 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/01_Fundamentals/" />
+  <Folder Name="/src/01_Fundamentals/01_TemperatureAnalyzer/">
+    <Project Path="src/01_Fundamentals/01_TemperatureAnalyzer/TemperatureAnalyzer.csproj" />
+  </Folder>
+  <Folder Name="/src/01_Fundamentals/02_NumberCategorizer/">
+    <Project Path="src/01_Fundamentals/02_NumberCategorizer/NumberCategorizer.csproj" />
+  </Folder>
+  <Folder Name="/src/01_Fundamentals/03_LoginSystem/">
+    <Project Path="src/01_Fundamentals/03_LoginSystem/LoginSystem.csproj" />
+  </Folder>
+  <Folder Name="/src/02_DataStructure/" />
+  <Folder Name="/src/02_DataStructure/01_ArrayStatistics/">
+    <Project Path="src/02_DataStructure/01_ArrayStatistics/ArrayStatistics.csproj" />
+  </Folder>
+  <Folder Name="/src/02_DataStructure/05_MatrixSummation/">
+    <Project Path="src/02_DataStructure/05_MatrixSummation/MatrixSummation.csproj" />
+  </Folder>
+  <Folder Name="/src/02_DataStructure/06_StudentAverages/">
+    <Project Path="src/02_DataStructure/06_StudentAverages/StudentAverages.csproj" />
+  </Folder>
+  <Folder Name="/src/03_Advanced/" />
+  <Folder Name="/src/03_Advanced/07_RockPaperScissors/">
+    <Project Path="src/03_Advanced/07_RockPaperScissors/RockPaperScissors.csproj" />
+  </Folder>
+</Solution>
