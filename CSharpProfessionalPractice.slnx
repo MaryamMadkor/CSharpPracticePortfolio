@@ -24,4 +24,7 @@
   <Folder Name="/src/03_Advanced/07_RockPaperScissors/">
     <Project Path="src/03_Advanced/07_RockPaperScissors/RockPaperScissors.csproj" />
   </Folder>
+  <Folder Name="/src/03_Advanced/08_TicTacToeValidator/">
+    <Project Path="TicTacToeValidator/TicTacToeValidator.csproj" Id="41fdf238-c9de-4e2c-9310-8a07ee105632" />
+  </Folder>
 </Solution>
