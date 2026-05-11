@@ -53,19 +53,21 @@ Every project follows these principles:
 ## 🛠️ Technologies Used
 - Language: C# 9.0+
 
-Framework: .NET 10.0
+- Framework: .NET 10.0
 
-Tools: Visual Studio 2026, Git
+- Tools: Visual Studio 2026, Git
 
-Practices: Clean Code, SOLID basics
+- Practices: Clean Code, SOLID basics
 
-## 🚀 How to Run
-```bash
-git clone https://github.com/MaryamMadkor/CSharpPracticePortfolio/tree/MAIN/src/03_Advanced/SudokuValidator.git
-dotnet run --project src/10_SudokuValidator
-
-##Connect With Me
+## 🤝 Connect With Me
 GitHub: @MaryamMadkor
 LinkedIn: Maryam Hisham Sayed Madkour
 
 Email: maryam4madkor@gmail.com
+
+## 🚀 How to Run
+```bash
+git clone https://github.com/MaryamMadkor/CSharpPracticePortfolio/tree/MAIN/src/03_Advanced/SudokuValidator.git
+dotnet run --project src/03_Advanced/SudokuValidator/SudokuValidator.csproj
+
+
