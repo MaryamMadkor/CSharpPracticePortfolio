@@ -27,4 +27,7 @@
   <Folder Name="/src/03_Advanced/08_TicTacToeValidator/">
     <Project Path="TicTacToeValidator/TicTacToeValidator.csproj" Id="41fdf238-c9de-4e2c-9310-8a07ee105632" />
   </Folder>
+  <Folder Name="/src/03_Advanced/09_SudokuValidator/">
+    <Project Path="src/03_Advanced/SudokuValidator/SudokuValidator.csproj" Id="52e898e6-477d-4b9d-86f1-e36c68750719" />
+  </Folder>
 </Solution>

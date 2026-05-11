@@ -1,5 +1,5 @@
 ﻿/*
-9. Tic-Tac-Toe Win Checker (Advanced)
+8. Tic-Tac-Toe Win Checker (Advanced)
 
 Check for a winner in a 3x3 grid.
 
@@ -79,7 +79,7 @@ namespace TicTacToeWinCheck.Contracts.Models
 // logic namespace - implementation of contracts - Services
 namespace TicTacToeWinCheck.Logic
 {
-    public class CheckWinner : IDetermineWinner, IInterpretEnums // could be broken into two classes, each doing only one thing, but it would break everything now. so no.
+    public class CheckWinner : IDetermineWinner, IInterpretEnums 
     {
 
         /// <summary>
