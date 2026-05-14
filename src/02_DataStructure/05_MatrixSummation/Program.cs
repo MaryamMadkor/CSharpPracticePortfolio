@@ -86,9 +86,9 @@ namespace MatrixSum
             Console.WriteLine("========================= Matrices Sum App =========================");
             Console.WriteLine("====================================================================");
         }
-        / <summary>
-        / Displays footer of program
-        / </summary>
+        /// <summary>
+        /// Displays footer of program
+        /// </summary>
         public static void DisplayEnding()
         {
             Console.WriteLine("====================================================================");
