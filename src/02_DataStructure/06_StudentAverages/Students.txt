@@ -1,0 +1,4 @@
+6|Grade B: Very Good!|78.6,67.6,84.4,95.3
+7|Grade C: Good+.|67.8,78.6,77.8,65.3
+4|Grade E: Acceptable.|23,98,45,67
+2|Grade C: Good+.|25.6,86.6,87.6,98.3
