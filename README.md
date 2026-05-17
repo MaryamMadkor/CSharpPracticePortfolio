@@ -6,6 +6,12 @@ From "Hello World" to "Clean Architecture with Tests"
 ## Projects
 
 ### 🌟 Latest
+**Student Management System**
+- Complete CRUD Operation on students
+- Automatic grade calculation (A-F)
+- File persistence (Students.txt)
+- Custom Unit tests included
+
 **Sudoku Validator**
 - Validates rows, columns, AND 3x3 boxes
 - Tells you EXACTLY where duplicates are
@@ -32,6 +38,8 @@ Every project follows these principles:
 
 - User Experience 
 
+- FileIO
+
 
 ### 📈 The Growth Arc
 | # | Project             | What I Learned	        |
@@ -41,8 +49,10 @@ Every project follows these principles:
 | 3 | Login System 	  | Security (password masking) |
 | 4 | Array Statistics    | Separation of Concerns      |
 | 5 | Matrix Summation	  | 2D arrays 			|
-| 6 | Student Analyzer	  | Jagged arrays 		|
-| 7 | Rock Paper Scissors | Clean architecture + DI 	|
+| 6 | Student Analyzer    |Jagged arrays		|
+|   |(UPGRADED: Student Management System)  |  		|
+| 7 | Rock Paper Scissors |				|
+|   |   (UPGRADED) 	  | Clean architecture + DI 	|
 | 8 | Tic-Tac-Toe 	  | Complex logic 		|
 | 9 | Sudoku  		  | Unit testing 		|
 
