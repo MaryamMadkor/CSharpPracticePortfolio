@@ -39,7 +39,7 @@ Every project follows these principles:
 
 - User Experience 
 
-- FileIO
+- File Persistence
 
 
 ### 📈 The Growth Arc
@@ -57,9 +57,10 @@ Every project follows these principles:
 | 8 | Tic-Tac-Toe 	  | Complex logic 		|
 | 9 | Sudoku  		  | Unit testing 		|
 
-## 🧪 Tests Included
-- Sudoku validator has 4 tests (rows, columns, boxes, valid board)
-- More coming soon
+## 🧪 Custom Unit Tests Included
+- Sudoku validator
+- Student management system
+- Rock Paper Scissors
 
 ## 🛠️ Technologies Used
 - Language: C# 9.0+
