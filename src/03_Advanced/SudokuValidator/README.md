@@ -7,11 +7,14 @@ Validates complete Sudoku boards (rows, columns, 3x3 boxes). Shows EXACTLY where
 C# • .NET • 2D Arrays • Unit Tests
 
 ## Features
+### NEW UPGRADE! (File persistence (GameHistory.txt))
 - ✅ Validates all 9 rows (no duplicates 1-9)
 - ✅ Validates all 9 columns
 - ✅ Validates all 9 boxes (3x3 sub-grids)
 - ✅ Returns ALL duplicates with positions
+- ✅ Store and View Game History With Game ID Generator.
 - ✅ Custom Unit tests included
+
 
 ## How to Run
 ```bash

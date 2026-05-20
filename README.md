@@ -15,6 +15,7 @@ From "Hello World" to "Clean Architecture with Tests"
 **Sudoku Validator**
 - Validates rows, columns, AND 3x3 boxes
 - Tells you EXACTLY where duplicates are
+- *UPGRADE* File Persistence (GameHistory.txt)
 - Includes simple unit tests
 - [View Code →] https://github.com/MaryamMadkor/CSharpPracticePortfolio/tree/MAIN/src/03_Advanced/SudokuValidator
 

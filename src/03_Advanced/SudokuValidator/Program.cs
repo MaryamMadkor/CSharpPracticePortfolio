@@ -8,7 +8,6 @@ Concepts: 1D/2D arrays, conditionals, loops.
 Task: Verify no duplicates in a 9-element array (ignore zeros for incomplete rows).
 */
 //Contract Namespace
-using System.Globalization;
 using SudokuValidator.Application;
 using SudokuValidator.Contracts;
 using SudokuValidator.Contracts.Models;
@@ -19,7 +18,7 @@ namespace SudokuValidator.Contracts
 {
     public interface IInputHandler
     {
-        public bool ShouldContinue();
+        public bool ShouldContinue(string message);
         public int[,] ReadBoard();
     }
     public interface IOutputHandle
@@ -29,11 +28,18 @@ namespace SudokuValidator.Contracts
         public void DisplayError(string message);
         public void DisplayResult(string message);
         public void DisplayMistakes(List<string> mistakes);
+        public void DisplayHistory();
+        public void DisplayBoard(int[,] game);
+    }
+    public interface IInterpretEnum
+    {
+        public string GetState(States state);
+        public States GetState(bool valid);
     }
     public interface IGameDataHandler
     {
-        public static abstract string GetState(States state);
-        public static abstract States GetState(bool valid);
+        public void StoreGame(Game game);
+        public int giveID();
         public static abstract string DocumentError((int position, int num) rowNum, int RowColumnBoxCase);
 
     }
@@ -46,9 +52,10 @@ namespace SudokuValidator.Contracts.Models
 {
     public class Game
     {
-        public int[,]? gameBoard;
-        public States state;
-        public List<string>? Mistakes;
+        public int Id { get; set; }
+        public int[,] gameBoard { get; set; }
+        public States state {  get; set; }
+        public List<string>? Mistakes {  get; set; }
     }
     public enum States
     {
@@ -62,6 +69,7 @@ namespace SudokuValidator.Contracts.Models
         public const int BoardSize = 9;
         public const int upperBound = 9;
         public const int lowerBound = 1;
+        public const string filePath = @"GameHistory.txt";
     }
 }
 namespace SudokuValidator.Logic
@@ -239,6 +247,27 @@ namespace SudokuValidator.Logic
             }
         }
     }
+    public class InterpretEnum : IInterpretEnum
+    {
+        public States GetState(bool valid)
+        {
+            return valid switch
+            {
+                true => States.Valid,
+                false => States.NotValid
+            };
+        }
+        public string GetState(States state)
+        {
+            return state switch
+            {
+                States.Valid => "Good Job! It's Valid.",
+                States.NotValid => "You lose! Practice makes perfect.",
+                _ => "Not valid State."
+            };
+        }
+
+    }
     public class GameDataHandler : IGameDataHandler
     {
         /// <summary>
@@ -257,22 +286,53 @@ namespace SudokuValidator.Logic
                 _ => "Invalid Input."
             };
         }
-        public static States GetState(bool valid)
+        public int giveID()
         {
-            return valid switch
-            {
-                true => States.Valid,
-                false => States.NotValid
-            };
+            if (!File.Exists(Constants.filePath))
+                throw new ArgumentException("File Doesn't Exist.");
+            string[] allLines = File.ReadAllLines(Constants.filePath);
+            if (allLines.Length == 0)
+                throw new ArgumentException("No games in history yet. Play?");
+            int newID = 0;
+            var oldId = int.Parse(allLines[0]);
+            newID = (oldId) + 1;
+            allLines[0] = newID.ToString();
+            File.WriteAllLines(Constants.filePath, allLines);
+            return newID;
         }
-        public static string GetState(States state)
+        public void StoreGame(Game game)
         {
-            return state switch
+            if (!File.Exists(Constants.filePath))
             {
-                States.Valid => "Good Job! It's Valid.",
-                States.NotValid => "You lose! Practice makes perfect.",
-                _ => "Not valid State."
-            };
+                throw new ArgumentException("File Doesn't Exist.");
+            }
+            string[] allLines = File.ReadAllLines(Constants.filePath);
+            int originalLength = allLines.Length;
+            if(game.Mistakes != null)
+            {
+                int countofMistakes = game.Mistakes.Count;
+                Array.Resize(ref allLines, allLines.Length + 1 + countofMistakes);
+                string gameboard = "";
+                for(int i = 0; i < Constants.BoardSize; i++)
+                {
+                    for(int j = 0;j < Constants.BoardSize; j++)
+                    {
+                        gameboard += game.gameBoard[i, j];
+                    }
+                }
+                allLines[originalLength] = $"{game.Id}|{countofMistakes}|{gameboard}";
+                for(int i = 0; i < countofMistakes; i++)
+                {
+                    allLines[originalLength + i + 1] = $"{game.Mistakes[i]}";
+                }
+                File.WriteAllLines(Constants.filePath, allLines);
+            }
+            else
+            {
+                Array.Resize(ref allLines , allLines.Length+1);
+                allLines[originalLength - 1] = $"{game.Id}|0";
+                File.WriteAllLines (Constants.filePath, allLines);
+            }
         }
     }
 }
@@ -303,15 +363,68 @@ namespace SudokuValidator.UserInterface
                 Console.WriteLine(mistakes[i]);
             }
         }
+        private void DisplayBoard(string game)
+        {
+            for (int i = 0; i < Constants.BoardSize; i++)
+            {
+                Console.Write("|");
+                for (int j = 0; j < Constants.BoardSize; j++)
+                {
+                    Console.Write(game[j + (i * Constants.BoardSize)] + (j % 3 == 2 && j != 0 ? "|" : " "));
+                }
+                Console.WriteLine((i % 3 == 2 && i != Constants.BoardSize - 1 ? "\n|-----|-----|-----|" : ""));
+            }
+        }
+        public void DisplayBoard(int[,] game)
+        {
+            for (int i = 0; i < Constants.BoardSize; i++)
+            {
+                Console.Write("|");
+                for (int j = 0; j < Constants.BoardSize; j++)
+                {
+                    Console.Write( game[i, j] + (j % 3 == 2 && j != 0 ? "|" : " "));
+                }
+                Console.WriteLine((i % 3 == 2 && i != Constants.BoardSize-1 ? "\n|-----|-----|-----|" : ""));
+            }
+        }
+        public void DisplayHistory()
+        {
+            if (!File.Exists(Constants.filePath))
+                throw new ArgumentException("File Doesn't Exist.");
+            string[] allLines = File.ReadAllLines (Constants.filePath);
+            if(allLines.Length == 0)
+                throw new ArgumentException("No games in history yet. Play?");
+            for(int i = 1; i < allLines.Length; i++)
+            {
+                Console.WriteLine(separator);
+                var parts = allLines[i].Split('|');
+                int mistakeCount = int.Parse(parts[1]);
+                DisplayBoard(parts[2]);
+                if (mistakeCount == 0)
+                {
+                    Console.WriteLine($"Game #{parts[0]}: is Valid!. Mistake count is ZERO.");
+                }
+                else
+                {
+                    Console.WriteLine($"Game #{parts[0]}: is Invalid. Mistake count is: {mistakeCount}.");
+                    for(int j  = 1; j <= mistakeCount; j++)
+                    {
+                        Console.WriteLine(allLines[i+j]);
+                    }
+                }
+                i += mistakeCount;
+                Console.WriteLine(separator);
+            }
+        }
     }
     public class InputHandler : IInputHandler
     {
         /// <summary>
         /// Reads desire to continue for more checks
         /// </summary>
-        public bool ShouldContinue()
+        public bool ShouldContinue(string message)
         {
-            Console.Write("Would you want to try check more games? (y/n): ");
+            Console.Write(message);
             string decision = Console.ReadLine().Trim().ToLower();
             return decision == "y" || decision == "yes";
         }
@@ -362,12 +475,14 @@ namespace SudokuValidator.Application
         IInputHandler inputHandler;
         IOutputHandle outputHandler;
         IGameDataHandler gameDataHandler;
+        IInterpretEnum interpretEnum;
         IValidateGame validateGame;
-        public SudokuValidatorApplication(IInputHandler inputHandler, IOutputHandle outputHandler, IGameDataHandler gameDataHandler, IValidateGame validateGame)
+        public SudokuValidatorApplication(IInputHandler inputHandler, IOutputHandle outputHandler, IGameDataHandler gameDataHandler, IInterpretEnum interpretEnum, IValidateGame validateGame)
         {
             this.inputHandler = inputHandler;
             this.outputHandler = outputHandler;
             this.gameDataHandler = gameDataHandler;
+            this.interpretEnum = interpretEnum;
             this.validateGame = validateGame;
         }
         public void Run()
@@ -381,12 +496,20 @@ namespace SudokuValidator.Application
                 while (true)
                 {
                     Game game = new Game();
+                    game.Id = gameDataHandler.giveID();
                     outputHandler.DisplayHeader();
                     game.gameBoard = inputHandler.ReadBoard();
                     bool isValid = validateGame.GetState(game);
-                    outputHandler.DisplayResult(GameDataHandler.GetState(GameDataHandler.GetState(isValid)));
-                    outputHandler.DisplayMistakes(game.Mistakes);
-                    if (!inputHandler.ShouldContinue())
+                    outputHandler.DisplayBoard(game.gameBoard);
+                    outputHandler.DisplayResult(interpretEnum.GetState(interpretEnum.GetState(isValid)));
+                    gameDataHandler.StoreGame(game);
+                    if(game.Mistakes != null)
+                        outputHandler.DisplayMistakes(game.Mistakes);
+                    if (inputHandler.ShouldContinue("Would you want to view game history? (y/n): "))
+                    {
+                        outputHandler.DisplayHistory();
+                    }
+                    if (!inputHandler.ShouldContinue("Would you want to try check more games? (y/n): "))
                     {
                         outputHandler.DisplayFooter();
                         break;
@@ -419,9 +542,10 @@ namespace SudokuValidator
             InputHandler inputHandler = new InputHandler();
             OutputHandler outputHandler = new OutputHandler();
             GameDataHandler gameDataHandler = new GameDataHandler();
+            InterpretEnum interpretEnum = new InterpretEnum();
             SudokuValdate sudokuValdate = new SudokuValdate();
 
-            SudokuValidatorApplication app = new SudokuValidatorApplication(inputHandler, outputHandler, gameDataHandler, sudokuValdate);
+            SudokuValidatorApplication app = new SudokuValidatorApplication(inputHandler, outputHandler, gameDataHandler, interpretEnum, sudokuValdate);
             app.Run();
         }
     }

@@ -7,11 +7,35 @@
 
     Task: Read a number.Print whether it’s positive/negative and even/odd.
 */
-namespace NumberCategorization
+using NumberCategorization.Contracts.Models;
+
+namespace NumberCategorization.Contracts
 {
-    /// <summary>
-    /// Represents the category of a number
-    /// </summary>
+
+}
+namespace NumberCategorization.Contracts.Models
+{
+    public class Input
+    {
+        public char input {  get; set; }
+        public CharCategory type {  get; set; }
+        public NumberCategory? numbertype {  get; set; }
+        public Input(char input, CharCategory type, NumberCategory? numbertype = null)
+        {
+            this.input = input;
+            this.type = type;
+            this.numbertype = numbertype;
+        }
+    }
+    public enum CharCategory
+    {
+        none = 0,
+        Char = 1,
+        integer = 2,
+        floating = 3,
+        String = 4,
+        whiteSpace = 5
+    }
     public enum NumberCategory
     {
         PositiveEven = 2,
@@ -20,6 +44,70 @@ namespace NumberCategorization
         NegativeOdd = -1,
         NegativeEven = -2
     }
+}
+namespace NumberCategorization.Logic
+{
+    public class NumberCateorizerLogic
+    {
+        public CharCategory IdentifyChar(string input)
+        {
+            if(int.TryParse(input, out int inputNum))
+            {
+                return CharCategory.integer;
+            }
+            else if(float.TryParse(input, out float inputFloat) || double.TryParse(input,out double inputDouble))
+            {
+                return CharCategory.floating;
+            }
+            else
+            {
+                if(input.Length == 1 && input != " ") return CharCategory.Char;
+                else if(string.IsNullOrWhiteSpace(input)) return CharCategory.whiteSpace;
+                else return CharCategory.String;
+            }
+        }
+        public NumberCategory IdentifyNumProperties(int input)
+        {
+            bool even = false; bool positive = false; bool zero = false;
+            if (input == 0) return NumberCategory.Zero;
+            if (input > 0) positive = true;
+            if (input % 2 == 0) even = true;
+            if (even && positive) return NumberCategory.PositiveEven;
+            else if (even && !positive) return NumberCategory.NegativeEven;
+            else if (!even && positive) return NumberCategory.PositiveOdd;
+            else return NumberCategory.NegativeOdd;
+        }
+        public NumberCategory IdentifyNumProperties(float input)
+        {
+            bool even = false; bool positive = false;
+            if (input == 0) return NumberCategory.Zero;
+            if (input > 0) positive = true;
+            if (input % 2 == 0) even = true;
+            if (even && positive) return NumberCategory.PositiveEven;
+            else if (even && !positive) return NumberCategory.NegativeEven;
+            else if (!even && positive) return NumberCategory.PositiveOdd;
+            else return NumberCategory.NegativeOdd;
+        }
+    }
+}
+namespace NumberCategorization.UserInterface
+{
+
+}
+namespace NumberCategorization.Application
+{
+
+}
+namespace NumberCategorization.Tests
+{
+
+}
+namespace NumberCategorization
+{
+    /// <summary>
+    /// Represents the category of a number
+    /// </summary>
+
     /// <summary>
     /// Provides methods for categorizing numbers
     /// </summary>
