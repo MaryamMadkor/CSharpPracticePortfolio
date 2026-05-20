@@ -19,10 +19,12 @@ From "Hello World" to "Clean Architecture with Tests"
 - Includes simple unit tests
 - [View Code →] https://github.com/MaryamMadkor/CSharpPracticePortfolio/tree/MAIN/src/03_Advanced/SudokuValidator
 
-**Ultimate Tic-Tac-Toe** 
+**Ultimate Tic-Tac-Toe(UPGRADE)** 
 - Supports 3x3 AND 9x9 "ultimate" mode
 - 8 win condition checks
 - Color-coded UI
+- JSON configuration
+- 18+ simple tests
 
 ### 📊 Code Quality Standards
 Every project follows these principles:
@@ -54,8 +56,8 @@ Every project follows these principles:
 |   |(UPGRADED: Student Management System)  |  		|
 | 7 | Rock Paper Scissors |				|
 |   |   (UPGRADED) 	  | Clean architecture + DI 	|
-| 8 | Tic-Tac-Toe 	  | Complex logic 		|
-| 9 | Sudoku  		  | Unit testing 		|
+| 8 | Tic-Tac-Toe(UPGRADED) 	  | Complex logic 		|
+| 9 | Sudoku (UPGRADED)   | testing	 		|
 
 ## 🧪 Custom Unit Tests Included
 - Sudoku validator
@@ -72,8 +74,8 @@ Every project follows these principles:
 - Practices: Clean Code, SOLID basics
 
 ## 🤝 Connect With Me
-GitHub: @MaryamMadkor
-LinkedIn: Maryam Hisham Sayed Madkour
+- GitHub: @MaryamMadkor
+- LinkedIn: Maryam Hisham Sayed Madkour
 
 Email: maryam4madkor@gmail.com
 

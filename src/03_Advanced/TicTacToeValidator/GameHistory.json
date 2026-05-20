@@ -1,0 +1,117 @@
+[
+  {
+    "gameId": 1,
+    "gameState": "Xwin",
+    "gameSize": "normal",
+    "gameBoard": [
+      [
+        "o",
+        "-",
+        "o"
+      ],
+      [
+        "x",
+        "x",
+        "x"
+      ],
+      [
+        "x",
+        "o",
+        "x"
+      ]
+    ],
+    "gameStateDescribtion": "X is the winner! Congrats!!"
+  },
+  {
+    "gameId": 2,
+    "gameState": "Draw",
+    "gameSize": "normal",
+    "gameBoard": [
+      [
+        "o",
+        "o",
+        "x"
+      ],
+      [
+        "x",
+        "x",
+        "o"
+      ],
+      [
+        "o",
+        "o",
+        "x"
+      ]
+    ],
+    "gameStateDescribtion": "It\u0027s a DRAW, best of luck next time."
+  },
+  {
+    "gameId": 3,
+    "gameState": "Xwin",
+    "gameSize": "normal",
+    "gameBoard": [
+      [
+        "x",
+        "o",
+        "x"
+      ],
+      [
+        "x",
+        "o",
+        "x"
+      ],
+      [
+        "o",
+        "x",
+        "x"
+      ]
+    ],
+    "gameStateDescribtion": "X is the winner! Congrats!!"
+  },
+  {
+    "gameId": 4,
+    "gameState": "Incomplete",
+    "gameSize": "normal",
+    "gameBoard": [
+      [
+        "x",
+        "o",
+        "x"
+      ],
+      [
+        "-",
+        "x",
+        "-"
+      ],
+      [
+        "o",
+        "x",
+        "o"
+      ]
+    ],
+    "gameStateDescribtion": "Game is incomplete, so maybe play again?"
+  },
+  {
+    "gameId": 5,
+    "gameState": "Incomplete",
+    "gameSize": "normal",
+    "gameBoard": [
+      [
+        "x",
+        "o",
+        "x"
+      ],
+      [
+        "-",
+        "-",
+        "o"
+      ],
+      [
+        "x",
+        "-",
+        "o"
+      ]
+    ],
+    "gameStateDescribtion": "Game is incomplete, so maybe play again?"
+  }
+]

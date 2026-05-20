@@ -9,10 +9,16 @@ Task: Validate rows, columns, and diagonals for 3 matching marks (X/O).
 */
 
 // interface namespace: contracts:
+using Microsoft.Extensions.Configuration;
+using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using TicTacToeWinCheck.Application;
 using TicTacToeWinCheck.Contracts;
 using TicTacToeWinCheck.Contracts.Models;
+using TicTacToeWinCheck.DataUtilities;
 using TicTacToeWinCheck.Logic;
+using TicTacToeWinCheck.Tests;
 using TicTacToeWinCheck.UserInterface;
 
 namespace TicTacToeWinCheck.Contracts
@@ -26,10 +32,15 @@ namespace TicTacToeWinCheck.Contracts
         public Sizes GetGameSizeFromInt(int givenSize);
         public string GetGameStateString(States state);
     }
+    public interface IDataHandler
+    {
+        public int GiveID();
+        public void StoreGame(TicTacToe game);
+    }
     public interface IInputHandler
     {
-        public char[,] GetTicTacToeBoard(int? index);
-        public bool ShouldContinue();
+        public List<List<char>> GetTicTacToeBoard(int? boardIndex);
+        public bool ShouldContinue(string message);
         public int GetSizeChoice();
 
     }
@@ -38,12 +49,84 @@ namespace TicTacToeWinCheck.Contracts
         public void DisplayHeader();
         public void DisplayFooter();
         public void DisplayResult(string gameState);
-        public void DisplayBoard(char[,] board);
+        public void DisplayBoard(List<List<char>> board);
         public void DisplayError(string message);
+        public void DisplayHistory();
     }
     public interface TicTacToeCheckApplication
     {
         public void Run();
+    }
+}
+namespace TicTacToeWinCheck.DataUtilities
+{
+    public static class AppConfiguration
+    {
+        private static IConfigurationRoot _configuration;
+
+        static AppConfiguration()
+        {
+            var builder = new ConfigurationBuilder()
+                        .SetBasePath(@"CSharpPracticePortfolio\src\03_Advanced\TicTacToeValidator")
+                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+            _configuration = builder.Build();
+        }
+
+        public static string GameHistoryPath =>
+            _configuration["Storage:GameHistoryPath"] ?? "GameHistory.json";
+
+        public static string GetValue(string key, string defaultValue = "")
+        {
+            return _configuration[key] ?? defaultValue;
+        }
+    }
+    public class JSONDataHandleLogic
+    {
+        private static readonly JsonSerializerOptions _options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        private static void SaveObject<T>(T data, string filePath)
+        {
+            string json = JsonSerializer.Serialize(data, _options);
+            File.WriteAllText(filePath, json);
+        }
+        public static void SaveAllGames(List<TicTacToe> games, string filePath)
+        {
+            SaveObject(games, filePath);
+        }
+        public static List<TicTacToe> LoadAllGames(string filePath)
+        {
+            if(!File.Exists(filePath))  
+                return new List<TicTacToe>();
+            string json = File.ReadAllText(filePath).Trim();
+            if (string.IsNullOrWhiteSpace(json))
+                return new List<TicTacToe>();
+
+            return JsonSerializer.Deserialize<List<TicTacToe>>(json, _options)
+                   ?? new List<TicTacToe>();
+        }
+    }
+    public class DataHandler: IDataHandler
+    {
+        public void StoreGame(TicTacToe game)
+        {
+            var allGames = JSONDataHandleLogic.LoadAllGames(GameConstants.filePath);
+            var exists = allGames.FirstOrDefault(s => s.gameID == game.gameID);
+            if (exists != null)
+                throw new ArgumentException("This game ID already exists.");
+            allGames.Add(game);
+            JSONDataHandleLogic.SaveAllGames(allGames, GameConstants.filePath);
+        }
+        public int GiveID()
+        {
+            var allGames = JSONDataHandleLogic.LoadAllGames(GameConstants.filePath);
+            if (allGames.Count == 0)
+                return 1;
+            int max = allGames.Max(s => s.gameID);
+            return max + 1;
+        }
     }
 }
 namespace TicTacToeWinCheck.Contracts.Models
@@ -68,18 +151,72 @@ namespace TicTacToeWinCheck.Contracts.Models
         public const char whiteSpaceSymbol = '-';
         public const int normalSizeInt = (int)Sizes.normal;
         public const int ultimateSizeInt = (int)Sizes.ultimate;
+        public static string filePath => AppConfiguration.GameHistoryPath;
     }
     public class TicTacToe
     {
-        public States State = States.Incomplete;
-        public Sizes Size;
-        public char[,] gameBoard;
+        [JsonPropertyName("gameId")]
+        public int gameID {  get; set; }
+
+        [JsonPropertyName("gameState")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public States State {  get; set; }
+
+        [JsonPropertyName("gameSize")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Sizes Size {  get; set; }
+        
+        [JsonPropertyName("gameBoard")]
+        public List<List<char>> gameBoard { get; set; }
+        public string gameStateDescribtion => GetStateDescribtion(State);
+        private string GetStateDescribtion(States state)
+        {
+            InterpretEnum interpretEnum = new InterpretEnum();
+            return interpretEnum.GetGameStateString(state);
+        }
     }
 }
 // logic namespace - implementation of contracts - Services
 namespace TicTacToeWinCheck.Logic
 {
-    public class CheckWinner : IDetermineWinner, IInterpretEnums
+    public class InterpretEnum: IInterpretEnums
+    {
+
+
+        /// <summary>
+        /// Interprets size given by user int an enum size
+        /// </summary>
+
+        public Sizes GetGameSizeFromInt(int givenSize)
+        {
+            return givenSize switch
+            {
+                GameConstants.normalSizeInt => Sizes.normal,
+                GameConstants.ultimateSizeInt => Sizes.ultimate,
+                _ => throw new ArgumentException("Not an Acceptable Size.", nameof(givenSize))
+            };
+        }
+
+
+        /// <summary>
+        /// Returns a user-friendly message for each game state.
+        /// </summary>
+        public string GetGameStateString(States state)
+        {
+            return state switch
+            {
+                States.Owin => "O is the winner! Congrats!!",
+                States.Xwin => "X is the winner! Congrats!!",
+                States.Incomplete => "Game is incomplete, so maybe play again?",
+                States.Draw => "It's a DRAW, best of luck next time.",
+                _ => "Something Went Wrong, Please Try again."
+            };
+        }
+
+
+
+    }
+    public class CheckWinner : IDetermineWinner
     {
 
         /// <summary>
@@ -107,7 +244,7 @@ namespace TicTacToeWinCheck.Logic
         /// <summary>
         /// Returns game winner as a character.
         /// </summary>
-        private char? GetWinner(char[,] board)
+        private char? GetWinner(List<List<char>> board)
         {
             var lines = new[]
             {
@@ -126,10 +263,10 @@ namespace TicTacToeWinCheck.Logic
 
             foreach (var ((r1, c1), (r2, c2), (r3, c3)) in lines)
             {
-                if (board[r1, c1] != GameConstants.whiteSpaceSymbol &&
-                    board[r1, c1] == board[r2, c2] &&
-                    board[r2, c2] == board[r3, c3])
-                    return board[r1, c1];
+                if (board[r1][c1] != GameConstants.whiteSpaceSymbol &&
+                    board[r1][c1] == board[r2][c2] &&
+                    board[r2][c2] == board[r3][c3])
+                    return board[r1][c1];
             }
 
             return null;
@@ -139,46 +276,13 @@ namespace TicTacToeWinCheck.Logic
         /// </summary>
         /// <param name="board"></param>
         /// <returns></returns>
-        private bool HasEmptySpaces(char[,] board)
+        private bool HasEmptySpaces(List<List<char>> board)
         {
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
-                    if (board[i, j] == GameConstants.whiteSpaceSymbol)
+                    if (board[i][j] == GameConstants.whiteSpaceSymbol)
                         return true;
             return false;
-        }
-
-
-
-
-        /// <summary>
-        /// Interprets size given by user int an enum size
-        /// </summary>
-
-        public Sizes GetGameSizeFromInt(int givenSize)
-        {
-            return givenSize switch
-            {
-                GameConstants.normalSizeInt => Sizes.normal,
-                GameConstants.ultimateSizeInt => Sizes.ultimate,
-                _ => throw new ArgumentException("Not an Acceptable Size.", nameof(givenSize))
-            };
-        }
-
-
-        /// <summary>
-        /// Returns a user-friendly message for each game state.
-        /// </summary>
-        public string GetGameStateString(States state)
-        {
-            return state switch
-            {
-                States.Owin => "O is the winner! Congrats!!",
-                States.Xwin => "X is the winner! Congrats!!",
-                States.Incomplete => "Game is incomplete again, so maybe play again?",
-                States.Draw => "It's a DRAW, best of luck next time.",
-                _ => "Something Went Wrong, Please Try again."
-            };
         }
 
 
@@ -186,12 +290,12 @@ namespace TicTacToeWinCheck.Logic
         /// <summary>
         /// Validates board for null, square and size
         /// </summary>
-        private void ValidateBoard(char[,] board)
+        private void ValidateBoard(List<List<char>> board)
         {
             if (board == null)
                 throw new ArgumentNullException(nameof(board));
 
-            if (board.GetLength(0) != 3 || board.GetLength(1) != 3)
+            if (board.Count != 3 || board[0].Count != 3)
                 throw new ArgumentException("Board must be 3x3", nameof(board));
 
             // Validate all cells contain valid characters
@@ -199,7 +303,7 @@ namespace TicTacToeWinCheck.Logic
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    char c = board[i, j];
+                    char c = board[i][j];
                     if (c != GameConstants.xPlayer &&
                         c != GameConstants.oPlayer &&
                         c != GameConstants.whiteSpaceSymbol)
@@ -239,7 +343,7 @@ namespace TicTacToeWinCheck.UserInterface
         /// <summary>
         /// Reads one 3x3 tic tac toe game board, in case of 9x9 it reads only an indexed 3x3 board.
         /// </summary>
-        public char[,] GetTicTacToeBoard(int? boardIndex)
+        public List<List<char>> GetTicTacToeBoard(int? boardIndex)
         {
             Console.WriteLine(boardIndex == null
                 ? "\nEnter Tic-Tac-Toe board:"
@@ -266,36 +370,25 @@ namespace TicTacToeWinCheck.UserInterface
                     continue;
                 }
 
-                var board = new char[3, 3];
-                bool valid = true;
+                var board = new List<List<char>>();
+                for (int r = 0; r < 3; r++)
+                    board.Add(new List<char>());
 
                 for (int i = 0; i < 9; i++)
                 {
                     int row = i / 3;
                     int col = i % 3;
-
-                    if (chars[i] != GameConstants.xPlayer &&
-                        chars[i] != GameConstants.oPlayer &&
-                        chars[i] != GameConstants.whiteSpaceSymbol)
-                    {
-                        Console.WriteLine($"Invalid character '{chars[i]}' at position {i + 1}.");
-                        Console.WriteLine("Use only: 'x', 'o', or '-'");
-                        valid = false;
-                        break;
-                    }
-
-                    board[row, col] = chars[i];
+                    board[row].Add(chars[i]); 
                 }
-
-                if (valid) return board;
+                return board;
             }
         }
         /// <summary>
         /// Reads desire to continue for more checks
         /// </summary>
-        public bool ShouldContinue()
+        public bool ShouldContinue(string message)
         {
-            Console.Write("Would you want to try check more games? (y/n): ");
+            Console.Write(message);
             string decision = Console.ReadLine().Trim().ToLower();
             return decision == "y" || decision == "yes";
         }
@@ -323,11 +416,23 @@ namespace TicTacToeWinCheck.UserInterface
         }
         public void DisplayResult(string gameState)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Game state is: {gameState}.");
             Console.WriteLine(separator);
         }
-        public void DisplayBoard(char[,] board)
+        public void DisplayHistory()
+        {
+            if (!File.Exists(GameConstants.filePath)) throw new ArgumentException("File Doesn't Exist.");
+            Console.WriteLine(separator);
+            var allGames = JSONDataHandleLogic.LoadAllGames(GameConstants.filePath);
+            foreach(var game in allGames)
+            {
+                Console.WriteLine($"Game #{game.gameID}:");
+                DisplayBoard(game.gameBoard);
+                DisplayResult(game.gameStateDescribtion);
+                Console.WriteLine(separator);
+            }
+        }
+        public void DisplayBoard(List<List<char>> board)
         {
             Console.WriteLine("\nBoard:");
             for (int i = 0; i < 3; i++)
@@ -335,7 +440,7 @@ namespace TicTacToeWinCheck.UserInterface
                 Console.Write(" ");
                 for (int j = 0; j < 3; j++)
                 {
-                    Console.Write(board[i, j]);
+                    Console.Write(board[i][j]);
                     if (j < 2) Console.Write(" | ");
                 }
                 Console.WriteLine();
@@ -351,12 +456,14 @@ namespace TicTacToeWinCheck.Application
     {
         public readonly IDetermineWinner determineWinner;
         public readonly IInterpretEnums interpretEnums;
+        public readonly IDataHandler dataHandler;
         public readonly IOutputHandler outputHandler;
         public readonly IInputHandler inputHandler;
-        public TicTacToeApplication(IDetermineWinner determineWinner, IInterpretEnums interpretEnums, IOutputHandler outputHandler, IInputHandler inputHandler)
+        public TicTacToeApplication(IDetermineWinner determineWinner, IInterpretEnums interpretEnums, IDataHandler dataHandler, IOutputHandler outputHandler, IInputHandler inputHandler)
         {
             this.determineWinner = determineWinner;
             this.interpretEnums = interpretEnums;
+            this.dataHandler = dataHandler;
             this.outputHandler = outputHandler;
             this.inputHandler = inputHandler;
         }
@@ -374,6 +481,7 @@ namespace TicTacToeWinCheck.Application
                     outputHandler.DisplayHeader();
                     int size = inputHandler.GetSizeChoice();
                     TicTacToe game = new TicTacToe();
+                    game.gameID = dataHandler.GiveID();
                     game.Size = interpretEnums.GetGameSizeFromInt(size);
                     if (size == GameConstants.normalSizeInt)
                     {
@@ -384,9 +492,14 @@ namespace TicTacToeWinCheck.Application
                         game.gameBoard = BuildUltimateBoard();
                     }
                     determineWinner.DetermineWinner(game);
+                    dataHandler.StoreGame(game);
                     outputHandler.DisplayBoard(game.gameBoard);
-                    outputHandler.DisplayResult(interpretEnums.GetGameStateString(game.State));
-                    if (!inputHandler.ShouldContinue())
+                    outputHandler.DisplayResult(game.gameStateDescribtion);
+                    if(inputHandler.ShouldContinue("Would you want to view game history? (y/n): "))
+                    {
+                        outputHandler.DisplayHistory();
+                    }
+                    if (!inputHandler.ShouldContinue("Would you want to try check more games? (y/n): "))
                     {
                         outputHandler.DisplayFooter(); break;
                     }
@@ -402,10 +515,11 @@ namespace TicTacToeWinCheck.Application
                 }
             }
         }
-        private char[,] BuildUltimateBoard()
+        private List<List<char>> BuildUltimateBoard()
         {
-            var metaBoard = new char[3, 3];
-
+            var metaBoard = new List<List<char>>();
+            for (int i = 0; i < 3; i++)
+                metaBoard.Add(new List<char>(new char[3]));
             for (int smallBoard = 0; smallBoard < 9; smallBoard++)
             {
                 int row = smallBoard / 3;
@@ -417,8 +531,7 @@ namespace TicTacToeWinCheck.Application
                 };
 
                 determineWinner.DetermineWinner(smallGame);
-
-                metaBoard[row, col] = smallGame.State switch
+                metaBoard[row][col] = smallGame.State switch
                 {
                     States.Xwin => GameConstants.xPlayer,
                     States.Owin => GameConstants.oPlayer,
@@ -437,12 +550,301 @@ namespace TicTacToeWinCheck
     {
         public static void Main(string[] args)
         {
+            Tests.Tests.TestAll();
             var checkWinner = new CheckWinner();
+            var interpretEnum = new InterpretEnum();
+            var dataHandler = new DataHandler();
             var outputHandler = new OutputHandler();
             var inputHandler = new InputHandler();
 
-            var app = new TicTacToeApplication(checkWinner, checkWinner, outputHandler, inputHandler);
+            var app = new TicTacToeApplication(checkWinner, interpretEnum, dataHandler, outputHandler, inputHandler);
             app.Run();
+        }
+    }
+}
+
+namespace TicTacToeWinCheck.Tests
+{
+    public class Tests
+    {
+        private static int passed = 0;
+        public static int failed = 0;
+        public static void TestAll()
+        {
+            Console.WriteLine("============================= Running Tests ===============================");
+
+            TestWins.TestXWin();
+            TestWins.TestOWin();
+            TestSpecialCases.TestDraw();
+            TestSpecialCases.TestIncomplete();
+
+            Console.WriteLine($"====================== Passed = {passed} | Failed = {failed} ======================");
+        }
+        public static void Assert(bool condition, string testName)
+        {
+            if(condition)
+            {
+                Console.WriteLine(testName + " : Passed!");
+                passed++;
+            }
+            else
+            {
+                Console.WriteLine(testName + " : Failed!!!");
+                failed++;
+            }
+        }
+    }
+    public class TestWins
+    {
+        public static CheckWinner checkWinner = new CheckWinner();
+        public static void TestXWin()
+        {
+            bool rows = TestXWinRows();
+            bool columns = TestXWinColumns();
+            bool diagonals = TestXWinDiagonals();
+            Tests.Assert(rows && columns && diagonals, "All X win cases.");
+        }
+        private static bool TestXWinRows()
+        {
+            TicTacToe gameXWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'x', 'x', 'x'},
+                    new List<char>{'o', '-', 'o'},
+                    new List < char > { 'x', 'o', 'x' } 
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin1);
+            TicTacToe gameXWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List < char > { 'o', '-', 'o' },
+                    new List < char > { 'x', 'x', 'x' },
+                    new List < char > { 'x', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin2);
+            TicTacToe gameXWin3 = new TicTacToe
+            {
+                gameID = -3,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'o', '-', 'o'},
+                    new List<char>{'x', 'o', '-'},
+                    new List < char > { 'x', 'x', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin3);
+            return gameXWin1.State == States.Xwin && gameXWin2.State == States.Xwin && gameXWin3.State == States.Xwin;
+        }
+        private static bool TestXWinColumns()
+        {
+            TicTacToe gameXWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>
+                {
+                    new List<char>{'o', '-', 'x'},
+                    new List<char>{'o', '-', 'x'},
+                    new List<char>{'x', 'o', 'x'}
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin1);
+            TicTacToe gameXWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'o', 'x', 'o'},
+                    new List<char>{'-', 'x', 'o'},
+                    new List<char>{'x', 'x', '-'}
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin2);
+            TicTacToe gameXWin3 = new TicTacToe
+            {
+                gameID = -3,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'x', '-', 'o'},
+                    new List < char > { 'x', 'o', '-' },
+                    new List < char > { 'x', 'o', '-' }
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin3);
+            return gameXWin1.State == States.Xwin && gameXWin2.State == States.Xwin && gameXWin3.State == States.Xwin;
+        }
+        private static bool TestXWinDiagonals()
+        {
+            TicTacToe gameXWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'x', 'o', 'x'},
+                    new List<char>{'o', 'x', 'o'},
+                    new List < char > { 'x', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin1);
+            TicTacToe gameXWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List < char > { 'x', '-', 'x' },
+                    new List < char > { 'o', 'x', 'o' },
+                    new List < char > { 'x', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameXWin2);
+            return gameXWin1.State == States.Xwin && gameXWin2.State == States.Xwin;
+        }
+        public static void TestOWin()
+        {
+            bool rows = TestOWinRows();
+            bool columns = TestOWinColumns();
+            bool diagonals = TestOWinDiagonals();
+            Tests.Assert(rows && columns && diagonals, "All O win cases.");
+        }
+        private static bool TestOWinRows()
+        {
+            TicTacToe gameOWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'o', 'o', 'o'},
+                    new List<char>{'x', '-', 'o'},
+                    new List < char > { 'x', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin1);
+            TicTacToe gameOWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'x', '-', 'o'},
+                    new List<char>{'o', 'o', 'o'},
+                    new List<char>{'x', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin2);
+            TicTacToe gameOWin3 = new TicTacToe
+            {
+                gameID = -3,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'o', '-', 'o'},
+                    new List<char>{'x', 'x', '-'},
+                    new List < char > { 'o', 'o', 'o' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin3);
+            return gameOWin1.State == States.Owin && gameOWin2.State == States.Owin && gameOWin3.State == States.Owin;
+        }
+        private static bool TestOWinColumns()
+        {
+            TicTacToe gameOWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List < char > { 'o', '-', 'o' },
+                    new List < char > { 'o', '-', 'o' },
+                    new List < char > { 'x', 'o', 'o' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin1);
+            TicTacToe gameOWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'x', 'o', 'x'},
+                    new List<char>{'-', 'o', 'o'},
+                    new List < char > { 'x', 'o', '-' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin2);
+            TicTacToe gameOWin3 = new TicTacToe
+            {
+                gameID = -3,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'o', '-', 'o'},
+                    new List < char > { 'o', 'x', 'x' },
+                    new List < char > { 'o', 'o', '-' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin3);
+            return gameOWin1.State == States.Owin && gameOWin2.State == States.Owin && gameOWin3.State == States.Owin;
+        }
+        private static bool TestOWinDiagonals()
+        {
+            TicTacToe gameOWin1 = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'x', 'x', 'o'},
+                    new List<char>{'-', 'o', 'x' },
+                    new List<char>{'o', 'o', '-'}
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin1);
+            TicTacToe gameOWin2 = new TicTacToe
+            {
+                gameID = -2,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List < char > { 'o', 'x', 'o' },
+                    new List < char > { 'x', 'o', '-' },
+                    new List < char > { 'x', 'x', 'o' }
+                }
+            };
+            checkWinner.DetermineWinner(gameOWin2);
+            return gameOWin1.State == States.Owin && gameOWin2.State == States.Owin;
+        }
+    }
+    public class TestSpecialCases
+    {
+        public static CheckWinner checkWinner = new CheckWinner();
+        public static void TestDraw()
+        {
+            TicTacToe gameDraw = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>> {
+                    new List<char>{'o', 'o', 'x'},
+                    new List<char>{'x', 'x', 'o'},
+                    new List<char>{'o', 'o', 'x' }
+                }
+            };
+            checkWinner.DetermineWinner(gameDraw);
+            Tests.Assert(gameDraw.State == States.Draw, "Draw Test");
+        }
+        public static void TestIncomplete()
+        {
+            TicTacToe gameIncomplete = new TicTacToe
+            {
+                gameID = -1,
+                Size = Sizes.normal,
+                gameBoard = new List<List<char>>{
+                    new List<char>{'x', 'o', 'x'},
+                    new List<char>{'o', '-', 'x'},
+                    new List<char>{'-', 'x', 'o'}
+                }
+            };
+            checkWinner.DetermineWinner(gameIncomplete);
+            Tests.Assert(gameIncomplete.State == States.Incomplete, "Incomplete Test");
         }
     }
 }
